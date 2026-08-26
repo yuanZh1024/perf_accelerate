@@ -27,3 +27,58 @@ static int my_getattr(const char *path,
 
     return -ENOENT;
 }
+
+
+static int my_readdir(const char *path,
+                      void *buf,
+                      fuse_fill_dir_t filler,
+                      off_t offset,
+                      struct fuse_file_info *fi,
+                      enum fuse_readdir_flags flags)
+{
+    if (strcmp(path, "/") != 0)
+        return -ENOENT;
+
+    filler(buf, ".", NULL, 0, 0);
+    filler(buf, "..", NULL, 0, 0);
+    filler(buf, "hello.txt", NULL, 0, 0);
+
+    return 0;
+}
+
+
+static int my_read(const char *path,
+                   char *buf,
+                   size_t size,
+                   off_t offset,
+                   struct fuse_file_info *fi)
+{
+    const char *content = "Hello FUSE!\n";
+
+    if (strcmp(path, "/hello.txt") != 0)
+        return -ENOENT;
+
+    size_t len = strlen(content);
+
+    if (offset >= len)
+        return 0;
+
+    if (offset + size > len)
+        size = len - offset;
+
+    memcpy(buf, content + offset, size);
+
+    return size;
+}
+
+static struct fuse_operations ops = {
+    .getattr = my_getattr,
+    .readdir = my_readdir,
+    .open    = my_open,
+    .read    = my_read,
+};
+
+int main(int argc, char *argv[])
+{
+    return fuse_main(argc, argv, &ops, NULL);
+}
