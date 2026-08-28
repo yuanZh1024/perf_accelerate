@@ -10,6 +10,13 @@ import java.nio.charset.StandardCharsets;
 
 import java.util.*;
 
+/*
+ 不使用mapreduce库
+自己实现map reduce
+
+目的：理解map reduce分别做了什么
+*/
+
 public class MiniMapReduce {
 
     /*
