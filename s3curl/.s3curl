@@ -1,0 +1,40 @@
+# 默认账号（不使用 --id 参数时，使用这一组 ak/sk）
+my %config = (
+    'accessKey' => 'minioadmin',
+    'secretKey' => 'minioadmin',
+    'endpoints' => {
+        # MinIO本地服务，path‑style访问
+        '192.168.31.128:9000' => {
+            'host' => '192.168.31.128:9000',
+            'style' => 'path',
+            'is_secure' => 0,
+            'region' => 'us‑east‑1'
+        },
+        # 127.0.0.1本地测试
+        '127.0.0.1:9000' => {
+            'host' => '127.0.0.1:9000',
+            'style' => 'path',
+            'is_secure' => 0,
+            'region' => 'us‑east‑1'
+        }
+    }
+);
+
+# ========== 多账号配置，全局变量，禁止写 my ==========
+%awsSecretAccessKeys = (
+    # 别名 minio_root
+    "minio_root" => {
+        id  => "minioadmin",
+        key => "minioadmin"
+    },
+    # 普通用户01
+    "user01" => {
+        id  => "AKIAUSER01",
+        key => "SuperSecretKey001"
+    },
+    # 普通用户02
+    "user02" => {
+        id  => "AKIAUSER02",
+        key => "SuperSecretKey002"
+    }
+);

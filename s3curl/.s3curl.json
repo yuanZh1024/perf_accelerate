@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "minio_root": {
+      "id": "minioadmin",
+      "key": "minioadmin"
+    },
+    "aws_prod": {
+      "id": "AKIA...",
+      "key": "secret..."
+    }
+  }
+}
