@@ -54,7 +54,7 @@ var (
 	copySrcRange     string
 	postFile         string // --post 的文件路径，空字符串表示空 POST
 	deleteFlag       bool
-	createBucketFlag bool // --createBucket
+	createBucketFlag bool
 	headFlag         bool
 	helpFlag         bool
 )
@@ -67,7 +67,7 @@ func init() {
 	flag.StringVar(&acl, "acl", "", "预定义 ACL（x-amz-acl）")
 	flag.StringVar(&contentMd5, "contentMd5", "", "手动指定 Content-MD5")
 	flag.BoolVar(&calculateContentMd5, "calculateContentMd5", false, "自动计算 Content-MD5")
-	flag.BoolVar(&debug, "debug", false, "开启调试输出")
+	flag.BoolVar(&debug, "debug", false, "开启调试日志")
 	flag.StringVar(&servicePath, "servicePath", "", "从资源路径中剔除的前缀（V4 未使用）")
 	flag.StringVar(&endpoints, "endpoint", "", "额外 endpoint（逗号分隔，保留兼容）")
 
@@ -112,8 +112,15 @@ func main() {
 		log.Fatalf("解析 URL 失败: %v", err)
 	}
 	host := parsedURL.Hostname()
-	// 构造 Host 头（不含端口，以兼容 MinIO）
-	hostHeader := host
+	port := parsedURL.Port() // 可能为空
+	hostHeader := host       // 强制不含端口，兼容 MinIO
+
+	// 调试：输出 Found the url
+	if debug {
+		log.Printf("s3curl: endpoints: s3.amazonaws.com s3-us-west-1.amazonaws.com s3-us-west-2.amazonaws.com s3-us-gov-west-1.amazonaws.com s3-eu-west-1.amazonaws.com s3-ap-southeast-1.amazonaws.com s3-ap-northeast-1.amazonaws.com s3-sa-east-1.amazonaws.com")
+		log.Printf("s3curl: Found the url: host=%s (without port), port=%s, uri=%s, query=%s;",
+			host, port, parsedURL.Path, parsedURL.RawQuery)
+	}
 
 	// 3. 确定 HTTP 方法
 	method := "GET"
@@ -123,13 +130,10 @@ func main() {
 		method = "DELETE"
 	} else if headFlag {
 		method = "HEAD"
-	} else if postFile != "" || flag.Lookup("post").Value.String() != "" { // 如果设置了 --post（即使值为空）
+	} else if postFile != "" || flag.Lookup("post").Value.String() != "" {
 		method = "POST"
 	}
-	// 注意：如果 --post 设置为空字符串，flag.Lookup("post").Value.String() 会返回 ""，但无法区分是否设置。
-	// 所以我们需要一个单独的 bool 来记录是否设置了 --post。
-	// 为了解决，我们改用自定义检查：在 parse 后检查是否有 --post 标志出现。
-	// 这里用一个更简单的方法：检查 os.Args 中是否包含 "--post"
+	// 检查 --post 是否显式设置（即使值为空）
 	postSet := false
 	for _, arg := range os.Args {
 		if arg == "--post" || strings.HasPrefix(arg, "--post=") {
@@ -176,7 +180,6 @@ func main() {
 			bodyBytes = []byte{}
 		}
 	} else {
-		// GET/DELETE/HEAD 无 body
 		body = nil
 		bodyBytes = []byte{}
 	}
@@ -290,10 +293,13 @@ func main() {
 	)
 
 	if debug {
-		log.Printf("CanonicalRequest:\n%s\n", canonicalRequest)
+		log.Printf("s3curl: CanonicalRequest:\n%s\n", canonicalRequest)
 	}
 
 	hashedCanonicalRequest := sha256Hex(canonicalRequest)
+	if debug {
+		log.Printf("s3curl: HashedCanonicalRequest: %s", hashedCanonicalRequest)
+	}
 
 	credentialScope := fmt.Sprintf("%s/%s/s3/aws4_request", dateStamp, region)
 	stringToSign := fmt.Sprintf("AWS4-HMAC-SHA256\n%s\n%s\n%s",
@@ -303,7 +309,7 @@ func main() {
 	)
 
 	if debug {
-		log.Printf("StringToSign:\n%s\n", stringToSign)
+		log.Printf("s3curl: StringToSign:\n%s\n", stringToSign)
 	}
 
 	// 计算签名密钥
@@ -315,7 +321,7 @@ func main() {
 
 	signature := hex.EncodeToString(hmacSHA256(kSigning, stringToSign))
 	if debug {
-		log.Printf("Signature: %s\n", signature)
+		log.Printf("s3curl: Signature: %s", signature)
 	}
 
 	authHeader := fmt.Sprintf("AWS4-HMAC-SHA256 Credential=%s/%s, SignedHeaders=%s, Signature=%s",
@@ -332,7 +338,9 @@ func main() {
 	}
 
 	if debug {
-		log.Printf("执行请求: %s %s\n", method, urlStr)
+		// 模拟 Perl 版本的 exec curl 输出
+		log.Printf("s3curl: exec curl -v -H 'Host: %s' -H 'x-amz-date: %s' -H 'Authorization: %s' -H 'x-amz-content-sha256: %s' %s %s",
+			hostHeader, amzDate, authHeader, contentSHA256, method, urlStr)
 	}
 
 	resp, err := client.Do(req)
