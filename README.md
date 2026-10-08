@@ -5,6 +5,12 @@
 - review  复习
 
 
+## 每个文件夹的内容说明/导航
+- linux_net
+  - 理解tap  用户态进程转发包给另一个用户态进程
+  https://www.doubao.com/chat/38445910822564354
+  
+
 
 ## 常用命令
 myself
