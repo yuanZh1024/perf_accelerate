@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>JS fetch FormData（触发OPTIONS预检）</title>
+</head>
+<body>
+<input type="file" id="fileInput" />
+<button onclick="upload()">JS上传（会发送OPTIONS预检）</button>
+<script>
+async function upload(){
+  const file = document.getElementById("fileInput").files[0];
+  if(!file) return;
+  const formData = new FormData();
+  formData.append("AWSAccessKeyId", "AKTEST");
+  // 替换为你node脚本生成的policy、signature
+  formData.append("policy", "eyJleHBpcmF0aW9uIjoiMjAyNi0xMC0xNlQxNzowMDozNi4zNTJaIiwiY29uZGl0aW9ucyI6W1siZXEiLCIkYnVja2V0IiwiY29ycy1kZW1vLWJ1Y2tldCJdLFsic3RhcnRzLXdpdGgiLCIka2V5IiwidXBsb2FkLyJdLFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLDAsMTA0ODU3NjBdXX0=");
+  formData.append("signature", "WNcxsinvBJjBVl6kBgFV23Zhkig=");
+  formData.append("key", "upload/"+file.name);
+  formData.append("file", file);
+
+  const res = await fetch("http://192.168.184.128:9002/cors-demo-bucket",{
+    method:"POST",
+    body:formData
+  });
+  console.log("response ok:", res.ok);
+  console.log(await res.text());
+}
+</script>
+</body>
+</html>
+<!-- （注：内容由AI生成） -->

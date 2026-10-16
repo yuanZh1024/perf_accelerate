@@ -48,3 +48,10 @@ hive --service hiveserver2
  beeline -u 'jdbc:hive2://localhost:10000/default'
 
 set mapreduce.task.io.sort.mb=20;
+
+
+## minio启动（模拟oss实验）
+ minio server /data/minio/disk1 /data/minio/disk2 /data/minio/disk3 /data/minio/disk4 --console-address ":9001"
+ 
+ 主要用这个
+ nohup MINIO_ROOT_USER=AKTEST MINIO_ROOT_PASSWORD=SKTEST123 minio server ~/minio-data --console-address :9001 > minio.log 2>&1 &
