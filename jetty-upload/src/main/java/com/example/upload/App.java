@@ -46,6 +46,8 @@ public class App {
 
         ctx.addServlet(new ServletHolder("health", new HealthServlet()), "/api/health");
 
+        ctx.addServlet(new ServletHolder("hi", new MyServlet()), "/hi");
+
         server.setHandler(ctx);
         server.setStopAtShutdown(true);
         server.start();
