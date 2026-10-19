@@ -46,7 +46,13 @@ public class App {
 
         ctx.addServlet(new ServletHolder("health", new HealthServlet()), "/api/health");
 
-        ctx.addServlet(new ServletHolder("hi", new MyServlet()), "/hi");
+        // 示例 servlet：新增 servlet 时照这个写法在这里注册路由
+        ctx.addServlet(new ServletHolder("my", new MyServlet()), "/api/my");
+
+        // CXF 的 WebService 统一挂在 /services/* 下，endpoint 由 CxfServlet.loadBus 发布
+        ServletHolder cxf = new ServletHolder("cxf", new CxfServlet());
+        cxf.setInitOrder(1);
+        ctx.addServlet(cxf, "/services/*");
 
         server.setHandler(ctx);
         server.setStopAtShutdown(true);

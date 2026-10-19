@@ -15,6 +15,8 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <jetty.version>9.4.54.v20240208</jetty.version>
+    <!-- CXF 3.5.x 是 javax 命名空间，配 JDK8 + Servlet3.1；4.x 起改用 jakarta，不能混用 -->
+    <cxf.version>3.5.11</cxf.version>
   </properties>
 
   <dependencies>
@@ -38,6 +40,23 @@
       <artifactId>javax.servlet-api</artifactId>
       <version>3.1.0</version>
     </dependency>
+    <!-- CXF：JAX-RS 前端 + HTTP 传输（后者含 CXFServlet / CXFNonSpringServlet） -->
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-frontend-jaxrs</artifactId>
+      <version>${cxf.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cxf</groupId>
+      <artifactId>cxf-rt-transports-http</artifactId>
+      <version>${cxf.version}</version>
+    </dependency>
+    <!-- JAX-RS 的 JSON 序列化：CXF 不自带，用 Jackson 的 JAX-RS Provider -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.jaxrs</groupId>
+      <artifactId>jackson-jaxrs-json-provider</artifactId>
+      <version>2.15.4</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -58,6 +77,14 @@
                   <mainClass>com.example.upload.App</mainClass>
                 </transformer>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                <!-- CXF 靠 META-INF/cxf/bus-extensions.txt 注册扩展，多个 jar 都有同名文件，
+                     必须用 AppendingTransformer 合并，否则 fat jar 里只剩一个，CXF 会启动失败 -->
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/cxf/bus-extensions.txt</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/cxf/bus-extension.txt</resource>
+                </transformer>
               </transformers>
               <filters>
                 <filter>
