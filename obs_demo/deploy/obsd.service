@@ -1,0 +1,36 @@
+[Unit]
+Description=obs-ec-store (4+2 erasure coded object store)
+Documentation=file:///usr/local/share/doc/obs-ec-store/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=obsd
+Group=obsd
+
+# -d data directory, -k data shards, -m parity shards, -s bytes per shard
+ExecStart=/usr/local/bin/obsd -d /var/lib/obsd -l 0.0.0.0 -p 9000 -k 4 -m 2 -s 256K
+
+Restart=on-failure
+RestartSec=2s
+TimeoutStopSec=20s
+
+# One connection per thread, plus six shard files open per request.
+LimitNOFILE=65536
+StateDirectory=obsd
+StateDirectoryMode=0750
+
+# Hardening
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+ReadWritePaths=/var/lib/obsd
+
+[Install]
+WantedBy=multi-user.target

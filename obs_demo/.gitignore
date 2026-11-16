@@ -1,0 +1,8 @@
+*.o
+*.a
+/obsd
+/obsd.exe
+/test/test_rs
+/test/test_store
+/test/test_http_parse
+/test/tmp/

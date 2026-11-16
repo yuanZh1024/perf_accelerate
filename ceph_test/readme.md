@@ -235,3 +235,53 @@ Not using image 'sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a
         ]
     }
 ]
+
+
+## 2026-11-14 20:22:13
+
+ radosgw-admin user create --uid=test --display-name="test"
+{
+    "user_id": "test",
+    "display_name": "test",
+    "email": "",
+    "suspended": 0,
+    "max_buckets": 1000,
+    "subusers": [],
+    "keys": [
+        {
+            "user": "test",
+            "access_key": "KF34U8RJHMDNA6ZO4LEJ",
+            "secret_key": "CKXmXo2Nc9xIQqQjkzN0u0whEGRl8lAGSs84WHXN",
+            "active": true,
+            "create_date": "2026-11-14T17:21:55.798597Z"
+        }
+    ],
+    "swift_keys": [],
+    "caps": [],
+    "op_mask": "read, write, delete",
+    "default_placement": "",
+    "default_storage_class": "",
+    "placement_tags": [],
+    "bucket_quota": {
+        "enabled": false,
+        "check_on_raw": false,
+        "max_size": -1,
+        "max_size_kb": 0,
+        "max_objects": -1
+    },
+    "user_quota": {
+        "enabled": false,
+        "check_on_raw": false,
+        "max_size": -1,
+        "max_size_kb": 0,
+        "max_objects": -1
+    },
+    "temp_url_keys": [],
+    "type": "rgw",
+    "mfa_ids": [],
+    "account_id": "",
+    "path": "/",
+    "create_date": "2026-11-14T17:21:55.797812Z",
+    "tags": [],
+    "group_ids": []
+}
