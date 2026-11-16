@@ -7,6 +7,11 @@
 #include <stdlib.h>
 
 // 打印某个块的前 32 字节（hex + ascii）
+/**
+ * 打印某个块前 32 字节的 hex 与 ascii 对照，用于观察裸盘字节。
+ * @param d  已打开的 Disk。
+ * @param n  要显示的块号。
+ */
 static void dump_block(Disk *d, uint64_t n) {
     char blk[BLOCK_SIZE];
     if (disk_read_block(d, n, blk) != 0) { printf("    <read error>\n"); return; }
@@ -18,6 +23,11 @@ static void dump_block(Disk *d, uint64_t n) {
 }
 
 // 查账本里某个对象
+/**
+ * 查询并打印账本中某对象的 onode（存在/不存在两种状态）。
+ * @param m     账本句柄。
+ * @param name  对象名。
+ */
 static void show_meta(Meta *m, const char *name) {
     Onode o;
     int rc = meta_get(m, name, &o);
@@ -32,6 +42,10 @@ static void show_meta(Meta *m, const char *name) {
     }
 }
 
+/**
+ * 写入流程插桩演示：拆开 store_write 的 4 个阶段，每步后 dump 裸块并查账本，
+ * 直观展示"数据先落盘、元数据后提交"与写时复制（先写旧版本 trace，再覆盖新版本）。
+ */
 int main(void) {
     Store s;
     if (store_open(&s, "/dev/sde", "meta_rocksdb") != 0) { puts("open failed"); return 1; }

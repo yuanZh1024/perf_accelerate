@@ -1,6 +1,10 @@
 #include "meta.h"
 #include <stdio.h>
 
+/**
+ * 第 3 步测试：验证 RocksDB 账本的 put/get/delete 与从元数据重建位图，
+ * 期望 get obj1 命中、get nope 返回 1、free blocks = 524283。
+ */
 int main(void) {
     Meta m;
     meta_open(&m, "meta_rocksdb");

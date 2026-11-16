@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * 第 4 步测试：验证写入流程（写 10000B、覆盖为 5000B、删除），
+ * 期望 free 依次 -3、-2、回到初始值，且读回内容 match=1。
+ */
 int main(void) {
     Store s;
     if (store_open(&s, "/dev/sde", "meta_rocksdb") != 0) { puts("open failed"); return 1; }

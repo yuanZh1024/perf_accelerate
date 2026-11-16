@@ -6,6 +6,13 @@
 #include <unistd.h>
 #include <stdio.h>
 
+/**
+ * 打开存储栈：算磁盘总块数、初始化位图、预留块 0、开账本并重建位图。
+ * @param s          输出，Store 句柄。
+ * @param dev        块设备路径。
+ * @param meta_path  RocksDB 目录。
+ * @return           0 成功；-1 任一步失败。
+ */
 int store_open(Store *s, const char *dev, const char *meta_path) {
     if (disk_open(&s->disk, dev) != 0) return -1;
     uint64_t total = lseek(s->disk.fd, 0, SEEK_END) / BLOCK_SIZE;
@@ -15,6 +22,14 @@ int store_open(Store *s, const char *dev, const char *meta_path) {
     return meta_rebuild_alloc(&s->meta, &s->alloc);
 }
 
+/**
+ * 写对象（CoW）：分配 -> 补零算crc写盘 -> 提交onode -> 释放旧块。
+ * @param s     存储句柄。
+ * @param name  对象名。
+ * @param data  源数据。
+ * @param len   字节数，决定占用块数。
+ * @return      0 成功；-1 失败（失败时回滚新分配，旧对象不变）。
+ */
 int store_write(Store *s, const char *name, const void *data, size_t len) {
     if (len == 0) return -1;
     uint64_t nblocks = (len + BLOCK_SIZE - 1) / BLOCK_SIZE;
@@ -55,6 +70,15 @@ out:
 }
 
 // 返回：0 成功, 1 不存在, -2 缓冲区太小, -3 校验失败, -1 其他错误
+/**
+ * 读对象并逐块校验 crc32c；失败时返回错误码而不返回坏数据。
+ * @param s       存储句柄。
+ * @param name    对象名。
+ * @param out     输出缓冲区。
+ * @param cap     缓冲区容量。
+ * @param outlen  输出，实际字节数。
+ * @return        0 成功；1 不存在；-2 缓冲区太小；-3 校验失败；-1 其他错误。
+ */
 int store_read(Store *s, const char *name, void *out, size_t cap, size_t *outlen) {
     Onode o;
     int rc = meta_get(&s->meta, name, &o);
@@ -80,6 +104,12 @@ int store_read(Store *s, const char *name, void *out, size_t cap, size_t *outlen
     return 0;
 }
 
+/**
+ * 删除对象：先提交删除，再释放块。
+ * @param s     存储句柄。
+ * @param name  对象名。
+ * @return      0 成功；-1 对象不存在或删除失败。
+ */
 int store_delete(Store *s, const char *name) {
     Onode o;
     if (meta_get(&s->meta, name, &o) != 0) return -1;
@@ -89,6 +119,7 @@ int store_delete(Store *s, const char *name) {
     return rc;
 }
 
+/** 逆序释放 meta / alloc / disk。@param s 存储句柄。 */
 void store_close(Store *s) {
     meta_close(&s->meta);
     alloc_destroy(&s->alloc);

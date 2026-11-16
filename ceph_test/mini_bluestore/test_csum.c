@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * 第 5 步测试：校验 crc32c 自检值 0xE3069283；写入 obj2 后绕过 store
+ * 直接把盘上第 2 块改成 'X' 模拟静默损坏，期望正常读 rc=0、损坏后读 rc=-3。
+ */
 int main(void) {
     printf("crc32c(\"123456789\") = 0x%08X (期望 0xE3069283)\n", crc32c("123456789", 9));
 

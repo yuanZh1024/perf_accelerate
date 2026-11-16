@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <string.h>
 
+/**
+ * 自写测试：写入全 'L' 的 objzzy（10000B / 3 块），再尝试读 obj1 并比对；
+ * 覆盖写部分已注释掉。
+ */
 int main(void) {
     Store s;
     if (store_open(&s, "/dev/sde", "meta_rocksdb") != 0) { puts("open failed"); return 1; }

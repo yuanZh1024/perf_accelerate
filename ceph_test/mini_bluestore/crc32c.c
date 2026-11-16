@@ -4,6 +4,7 @@
 static uint32_t table[256];
 static int inited;
 
+/** 生成 256 项 CRC32C 查表（反射多项式 0x82F63B78），由 crc32c 首次调用时初始化。 */
 static void init_table(void) {
     for (uint32_t i = 0; i < 256; i++) {
         uint32_t c = i;
@@ -14,6 +15,12 @@ static void init_table(void) {
     inited = 1;
 }
 
+/**
+ * 查表法计算 CRC32C：初值/结果均按位取反。
+ * @param buf  数据起始地址。
+ * @param len  数据字节数。
+ * @return     32 位校验值。
+ */
 uint32_t crc32c(const void *buf, size_t len) {
     if (!inited) init_table();
     const uint8_t *p = buf;

@@ -1,6 +1,10 @@
 #include "alloc.h"
 #include <stdio.h>
 
+/**
+ * 第 2 步测试：验证位图分配器的 first-fit 与碎片行为，
+ * 期望输出 1, 5, 1, 13；free blocks = 524273。不碰磁盘。
+ */
 int main(void) {
     Allocator a;
     alloc_init(&a, 524288);          // 2GB / 4KB
