@@ -285,3 +285,194 @@ Not using image 'sha256:6bb1c8a42fbc0bf87938946990b65174466997bc11c31eb5a323225a
     "tags": [],
     "group_ids": []
 }
+
+
+# ceph命令常用
+# 1. 列出集群所有 Pool
+ceph osd pool ls
+
+# 2. 列出指定 Pool 中的所有 RADOS Object
+rados -p default.rgw.buckets.index ls
+
+# 3. 查看 Pool 的统计信息
+ceph df detail
+
+# 4. 查看某个 RADOS Object 属于哪个 PG
+ceph osd map default.rgw.buckets.index <object_name>
+
+
+#  5.查询所有shard内的omapkey：
+for i in $(seq 0 10); do
+  echo "== shard $i"
+  rados -p default.rgw.buckets.index listomapkeys .dir.94d11251-e46a-4958-ae3c-0deddd5b81cb.24160.1.$i
+done
+
+某个omap key对应的value
+rados -p default.rgw.buckets.index   listomapkeys .dir.94d11251-e46a-4958-ae3c-0deddd5b81cb.24160.1.3
+photo.jpg
+small.bin
+
+rados -p default.rgw.buckets.index \
+  getomapval .dir.94d11251-e46a-4958-ae3c-0deddd5b81cb.24160.1.3  small.bin
+value (245 bytes) :
+00000000  08 03 ef 00 00 00 09 00  00 00 73 6d 61 6c 6c 2e  |..........small.|
+00000010  62 69 6e 04 00 00 00 00  00 00 00 01 07 03 72 00  |bin...........r.|
+00000020  00 00 01 00 00 20 00 00  00 00 00 1e cd fa 6a 31  |..... ........j1|
+00000030  6a f3 14 20 00 00 00 30  66 37 35 66 63 66 64 31  |j.. ...0f75fcfd1|
+00000040  36 33 63 39 66 63 32 30  37 64 62 31 63 36 66 36  |63c9fc207db1c6f6|
+00000050  37 31 61 64 36 65 33 04  00 00 00 74 65 73 74 04  |71ad6e3....test.|
+00000060  00 00 00 74 65 73 74 18  00 00 00 61 70 70 6c 69  |...test....appli|
+00000070  63 61 74 69 6f 6e 2f 6f  63 74 65 74 2d 73 74 72  |cation/octet-str|
+00000080  65 61 6d 00 00 20 00 00  00 00 00 00 00 00 00 00  |eam.. ..........|
+00000090  00 00 00 00 00 00 00 00  00 00 00 00 01 01 02 00  |................|
+000000a0  00 00 08 04 03 3e 00 00  00 39 34 64 31 31 32 35  |.....>...94d1125|
+000000b0  31 2d 65 34 36 61 2d 34  39 35 38 2d 61 65 33 63  |1-e46a-4958-ae3c|
+000000c0  2d 30 64 65 64 64 64 35  62 38 31 63 62 2e 33 34  |-0deddd5b81cb.34|
+000000d0  31 31 35 2e 36 34 36 36  38 34 37 31 34 36 38 32  |115.646684714682|
+000000e0  36 36 38 38 37 32 37 00  00 00 00 00 00 00 00 00  |6688727.........|
+000000f0  00 00 00 00 00                                    |.....|
+000000f5
+
+
+
+在你的 Ceph 环境里，上传一个大文件，然后观察三件事：
+# 1. 查看 RGW 数据池中的 RADOS Objects
+rados -p default.rgw.buckets.data ls
+
+# 2. 查看 Head 的 XATTR
+rados -p default.rgw.buckets.data listxattr <HEAD_OBJECT>
+
+# 3. 查看 Bucket Index 的 OMAP
+rados -p default.rgw.buckets.index listomapvals <INDEX_OBJECT>
+
+
+再用：
+radosgw-admin object stat \
+  --bucket mybucket \
+  --object big.bin
+
+
+# 观察上传流程
+观察 RGW 的 Manifest 和对象布局。
+
+这样你就能把 S3 PUT、Head/Tail、XATTR、OMAP、librados、Onode、ExtentMap、Blob、RocksDB 和磁盘块真正串起来。
+
+
+
+export ENDPOINT="http://127.0.0.1:8080"
+root@dev-virtual-machine:~#
+root@dev-virtual-machine:~# dd if=/dev/urandom of=/tmp/big.bin bs=1M count=20
+20+0 records in
+20+0 records out
+20971520 bytes (21 MB, 20 MiB) copied, 0.146522 s, 143 MB/s
+root@dev-virtual-machine:~#
+root@dev-virtual-machine:~# aws --endpoint-url "$ENDPOINT" s3api create-bucket \
+  --bucket ceph-lab-obj-20261117
+root@dev-virtual-machine:~#
+root@dev-virtual-machine:~# aws --endpoint-url "$ENDPOINT" s3api put-object \
+  --bucket ceph-lab-obj-20261117 \
+  --key big.bin \
+  --body /tmp/big.bin
+{
+    "ETag": "\"6403fdd9aeae0154dbf47fcfd0090e23\"",
+    "ChecksumCRC64NVME": "BhfTI3awXFk=",
+    "ChecksumType": "FULL_OBJECT"
+}
+root@dev-virtual-machine:~#
+root@dev-virtual-machine:~#
+root@dev-virtual-machine:~# radosgw-admin bucket radoslist \
+  --bucket=ceph-lab-obj-20261117
+94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_1
+94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_2
+94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_3
+94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_4
+94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1_big.bin
+
+
+~#
+root@dev-virtual-machine:~# radosgw-admin object manifest \
+  --bucket=ceph-lab-obj-20261117 \
+  --object=big.bin
+{
+    "size": 20971520,
+    "objects": [
+        {
+            "index": 0,
+            "part_id": 0,
+            "stripe_id": 0,
+            "offset": 0,
+            "size": 4194304,
+            "raw_obj": {
+                "pool": "default.rgw.buckets.data",
+                "oid": "94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1_big.bin",
+                "loc": ""
+            }
+        },
+        {
+            "index": 1,
+            "part_id": 0,
+            "stripe_id": 1,
+            "offset": 4194304,
+            "size": 4194304,
+            "raw_obj": {
+                "pool": "default.rgw.buckets.data",
+                "oid": "94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_1",
+                "loc": ""
+            }
+        },
+        {
+            "index": 2,
+            "part_id": 0,
+            "stripe_id": 2,
+            "offset": 8388608,
+            "size": 4194304,
+            "raw_obj": {
+                "pool": "default.rgw.buckets.data",
+                "oid": "94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_2",
+                "loc": ""
+            }
+        },
+        {
+            "index": 3,
+            "part_id": 0,
+            "stripe_id": 3,
+            "offset": 12582912,
+            "size": 4194304,
+            "raw_obj": {
+                "pool": "default.rgw.buckets.data",
+                "oid": "94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_3",
+                "loc": ""
+            }
+        },
+        {
+            "index": 4,
+            "part_id": 0,
+            "stripe_id": 4,
+            "offset": 16777216,
+            "size": 4194304,
+            "raw_obj": {
+                "pool": "default.rgw.buckets.data",
+                "oid": "94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1__shadow_.jUNc6UycRlHZbz-Qx1ABJDdaXrtaI-T_4",
+                "loc": ""
+            }
+        }
+    ]
+}
+root@dev-virtual-machine:~#
+
+
+rados -p default.rgw.buckets.data listxattr 94d11251-e46a-4958-ae3c-0deddd5b81cb.34115.1_big.bin
+user.rgw.acl
+user.rgw.cksum
+user.rgw.etag
+user.rgw.idtag
+user.rgw.manifest
+user.rgw.pg_ver
+user.rgw.source_zone
+user.rgw.tail_tag
+user.rgw.x-amz-checksum-crc64nvme
+user.rgw.x-amz-sdk-checksum-algorithm
+root@dev-virtual-machine:~#
+
+
+
